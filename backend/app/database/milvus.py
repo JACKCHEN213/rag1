@@ -66,6 +66,31 @@ def _create_collections():
             "params": {"M": 16, "efConstruction": 200},
         }
         collection.create_index("embedding", index_params)
+        
+        # Create index for sparse embedding
+        sparse_index_params = {
+            "index_type": "SPARSE_INVERTED_INDEX",  # Alternative: SPARSE_WAND
+            "metric_type": "IP",  # Inner Product for sparse vectors
+            "params": {"drop_ratio_build": 0.2},
+        }
+        collection.create_index("sparse_embedding", sparse_index_params)
+        collection.load()
+    else:
+        # Collection exists, check and add sparse_embedding index if missing
+        collection = Collection("document_chunks")
+        indexes = collection.indexes
+        has_sparse_index = any(idx.field_name == "sparse_embedding" for idx in indexes)
+        
+        if not has_sparse_index:
+            print("⚠ Collection exists but sparse_embedding index missing, creating it...")
+            sparse_index_params = {
+                "index_type": "SPARSE_INVERTED_INDEX",
+                "metric_type": "IP",
+                "params": {"drop_ratio_build": 0.2},
+            }
+            collection.create_index("sparse_embedding", sparse_index_params)
+            print("✓ sparse_embedding index created successfully")
+        
         collection.load()
     
     # Long term memory collection
